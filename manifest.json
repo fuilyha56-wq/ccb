@@ -4,7 +4,9 @@
     "description": "和群友赛博sex的娱乐插件，支持 ccb / 排行榜 / 单次最大 / 小南梁 等命令",
     "author": "Koikokokokoro",
     "license": "GPL-3.0",
-    "categories": "fun",
+    "categories": [
+        "tool"
+    ],
     "keywords": [
         "ccb",
         "fun",
@@ -36,5 +38,10 @@
         "config_class": "CCBConfig"
     },
     "entry_point": "plugin.py",
-    "min_core_version": "1.0.0"
+    "min_core_version": "1.0.0",
+    "display_name": "ccb",
+    "tags": [
+        "ccb",
+        "information"
+    ]
 }
