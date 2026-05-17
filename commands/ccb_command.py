@@ -53,36 +53,56 @@ class CCBCommand(BaseCommand):
         message_id: str = "",
         message: "Message | None" = None,
     ) -> None:
-        """初始化命令并保证限流器配置最新。"""
+        """初始化命令并保证限流器配置最新。
+
+        注意：BaseCommand.__init__ 会调用 inspect.getmembers，触发本类的
+        property 访问，所以限流器必须在 super().__init__() 之前就备好，
+        且任何属性都不能在初始化未完成时抛异常。
+        """
+        cfg = self._read_cfg(plugin)
+        self._ensure_limiter(cfg)
         super().__init__(plugin, stream_id, message_id, message)
 
-        cfg = self._cfg()
-        if CCBCommand._limiter is None:
-            CCBCommand._limiter = RateLimiter(
+    # ------------------------------------------------------------------ utils
+
+    @staticmethod
+    def _read_cfg(plugin: "CCBPlugin") -> CCBConfig:
+        """从 plugin 读取配置（静态版，便于在 super().__init__ 前调用）。"""
+        cfg = plugin.config
+        if not isinstance(cfg, CCBConfig):
+            raise RuntimeError("ccb 插件配置未正确注入")
+        return cfg
+
+    @classmethod
+    def _ensure_limiter(cls, cfg: CCBConfig) -> RateLimiter:
+        """初始化或刷新共享限流器。"""
+        if cls._limiter is None:
+            cls._limiter = RateLimiter(
                 window=cfg.limit.yw_window,
                 threshold=cfg.limit.yw_threshold,
                 ban_duration=cfg.limit.yw_ban_duration,
             )
         else:
-            CCBCommand._limiter.update_settings(
+            cls._limiter.update_settings(
                 window=cfg.limit.yw_window,
                 threshold=cfg.limit.yw_threshold,
                 ban_duration=cfg.limit.yw_ban_duration,
             )
-
-    # ------------------------------------------------------------------ utils
+        return cls._limiter
 
     def _cfg(self) -> CCBConfig:
         """获取插件配置。"""
-        cfg = self.plugin.config
-        if not isinstance(cfg, CCBConfig):
-            raise RuntimeError("ccb 插件配置未正确注入")
-        return cfg
+        return self._read_cfg(self.plugin)
 
     @property
     def limiter(self) -> RateLimiter:
         """全局限流器单例。"""
-        assert CCBCommand._limiter is not None
+        if CCBCommand._limiter is None:
+            CCBCommand._limiter = RateLimiter(
+                window=60,
+                threshold=5,
+                ban_duration=900,
+            )
         return CCBCommand._limiter
 
     def _sender_id(self) -> str:
