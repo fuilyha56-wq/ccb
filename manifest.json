@@ -5,7 +5,7 @@
     "author": "Koikokokokoro",
     "license": "GPL-3.0",
     "categories": [
-        "tool"
+        "fun"
     ],
     "keywords": [
         "ccb",
@@ -42,6 +42,7 @@
     "display_name": "ccb",
     "tags": [
         "ccb",
-        "information"
+        "fun",
+        "ranking"
     ]
 }
