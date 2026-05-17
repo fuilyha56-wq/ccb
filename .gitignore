@@ -1,0 +1,22 @@
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# 构建产物
+dist/
+build/
+*.mfp
+
+# 运行时数据
+data/
+
+# IDE
+.idea/
+.vscode/
+
+# 其它
+.DS_Store
+Thumbs.db

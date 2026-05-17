@@ -1,0 +1,40 @@
+{
+    "name": "ccb",
+    "version": "1.0.0",
+    "description": "和群友赛博sex的娱乐插件，支持 ccb / 排行榜 / 单次最大 / 小南梁 等命令",
+    "author": "Koikokokokoro",
+    "license": "GPL-3.0",
+    "categories": "fun",
+    "keywords": [
+        "ccb",
+        "fun",
+        "ranking",
+        "command"
+    ],
+    "dependencies": {
+        "plugins": [],
+        "components": []
+    },
+    "python_dependencies": [],
+    "dependencies_required": false,
+    "include": [
+        {
+            "component_type": "command",
+            "component_name": "ccb",
+            "description": "ccb 主命令及其子命令（top/vol/info/max）",
+            "dependencies": []
+        },
+        {
+            "component_type": "command",
+            "component_name": "xnn",
+            "description": "小南梁排行榜命令",
+            "dependencies": []
+        }
+    ],
+    "config": {
+        "config_file": "config.py",
+        "config_class": "CCBConfig"
+    },
+    "entry_point": "plugin.py",
+    "min_core_version": "1.0.0"
+}
