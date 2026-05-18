@@ -12,9 +12,11 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
+from src.app.plugin_system.api import send_api
 from src.app.plugin_system.api.log_api import get_logger
 from src.app.plugin_system.api.send_api import send_image, send_text
 from src.app.plugin_system.base import BaseCommand, cmd_route
+from src.core.models.message import MessageType
 
 from .. import ccb_logic
 from ..config import CCBConfig
@@ -133,6 +135,43 @@ class CCBCommand(BaseCommand):
             processed_plain_text=caption or "[图片]",
         )
 
+    async def _reply_text_image_text(
+        self,
+        head_text: str,
+        image_url: str,
+        tail_text: str,
+    ) -> bool:
+        """在一条消息里同时发送 文本 + 图片 + 文本。
+
+        通过 send_api 内部的 ``extra_media`` 通道把多个段拼到同一个
+        MessageEnvelope 里，由适配器作为单条消息的多个 segment 一起下发，
+        避免拆成 3 条消息分别推送。最终 envelope 中的段顺序为：
+        text(head) → image → text(tail)。
+
+        注意：转换器在出站路径上会优先用 ``processed_plain_text`` 作为
+        第一个 text 段的内容，因此这里直接传 ``head_text``，不要把整段
+        汇总文本塞进去，否则第一段会重复包含 tail。
+
+        Args:
+            head_text: 第一段文本
+            image_url: 图片 URL 或 base64
+            tail_text: 第三段文本
+
+        Returns:
+            是否发送成功
+        """
+        extra_media: list[dict] = [{"type": "image", "data": image_url}]
+        if tail_text:
+            extra_media.append({"type": "text", "data": tail_text})
+
+        return await send_api._send_message(
+            content=head_text,
+            message_type=MessageType.TEXT,
+            stream_id=self.stream_id,
+            processed_plain_text=head_text,
+            extra_media=extra_media,
+        )
+
     async def _resolve_nickname(
         self,
         user_id: str,
@@ -246,9 +285,13 @@ class CCBCommand(BaseCommand):
         )
         tail = "这是ta的初体验。" if is_first else f"这是ta的第{num}次。"
 
-        await self._reply_text(head)
-        await self._reply_image(get_avatar(target_user_id), caption=tail)
-        await self._reply_text(tail)
+        # 一次性把 文本 + 头像 + 文本 拼成同一条消息发出，
+        # 避免被拆成 3 条独立消息。
+        await self._reply_text_image_text(
+            head_text=head,
+            image_url=get_avatar(target_user_id),
+            tail_text=tail,
+        )
 
         if random.random() < cfg.limit.yw_probability:
             self.limiter.trigger_random_ban(actor_id)
